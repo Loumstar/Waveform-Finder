@@ -13,9 +13,7 @@
     #define CURVE_MAX_SAMPLES 100
     #define WAVEFORM_MAX_CURVES 15
 
-    // For the moment these values are meaningless
-    #define CURVE_ERROR_THRESHOLD 10000
-    #define WAVEFORM_ERROR_THRESHOLD 5
+    #define CURVE_ERROR_THRESHOLD 0.01
 
     typedef struct curve {
         size_t length;

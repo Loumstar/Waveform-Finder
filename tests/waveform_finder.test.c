@@ -28,17 +28,21 @@ int main(void){
         if(DELTA_S < i && is_point_of_inflection(&a_note_array[i])){
             saved_curves[curve_index].length = curve_data_index;
             saved_curves[curve_index].square_area = find_square_area(&saved_curves[curve_index]);
-
-            //printf("LENGTH %zu, SQ AREA %llu\n", saved_curves[curve_index].length, saved_curves[curve_index].square_area);
-
+            
             size_t relative_index = find_waveform(saved_curves, curve_index, MAX_SAVED_CURVES);
 
             if(relative_index){
-                //printf("WAVEFORM FOUND WITH LENGTH %zu\n", relative_index);
+                printf("WAVEFORM FOUND\n   LENGTH %zu\n", relative_index);
                 main_waveform.length = relative_index;
+
+                size_t waveform_frame_length = 0;
+                
                 for(size_t j = 0; j < relative_index; j++){
                     main_waveform.curves[j] = saved_curves[(curve_index + relative_index + j) % MAX_SAVED_CURVES];
+                    waveform_frame_length += main_waveform.curves[j].length;
                 }
+
+                if(waveform_frame_length) printf("   FREQUENCY %.2f\n", (double) a_note.header.sample_rate / waveform_frame_length);
             }
 
             curve_index = (curve_index + 1) % MAX_SAVED_CURVES;

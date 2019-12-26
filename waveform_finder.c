@@ -5,8 +5,8 @@ double derivative(const int32_t* y){
     Method to return the rate of change of displacement of the waveform with respect each
     sample.
 
-    Because adjacent samples are one apart, the equation is simplified to a difference in
-    displacemnt of the waveform: dy/ds ~ (y[1] - y[0]) / ∆s
+    Using consecutive samples to determine the derivative often gives innacurate results,
+    so an average across a set is used instead.
     */
     return (double) (y[DELTA_S] - y[0]) / DELTA_S;
 }
@@ -15,8 +15,6 @@ double second_derivative(const int32_t* y){
     /*
     Method to return the second derivative, or 'the rate of change of rate of change' of 
     displacement of the waveform with respect to sample count.
-
-    Again, ∆s = 1, so the equation is simplified to a difference in derivatives.
 
     For brevity, pointer arithmetic has been used where the -1 is the previous element
     relative to element y.
@@ -27,9 +25,6 @@ double second_derivative(const int32_t* y){
 bool is_point_of_inflection(const int32_t* frame){
     /*
     Method to determine whether a sample is a point of inflection along the waveform. 
-    
-    The cubic splines are formed between two points of inflection and the maximum 
-    absolute second derivative.
 
     The point of inflection is evaluated by comparing the previous second derivative to
     the next second derivative at that point.
@@ -46,6 +41,14 @@ bool is_point_of_inflection(const int32_t* frame){
 }
 
 uint64_t find_square_area(const curve* c){
+    /*
+    Method to determine the square area area underneath a curve.
+    This is equivalent to integrating the square of the function with respect to each
+    sample.
+
+    ∫ c ** 2 ds ~ sum(c[i] ** 2) * ∆s = sum(c2[i] ** 2)
+
+    */
     uint64_t square_difference = 0;
 
     for(size_t i = 0; i < c->length; i++){
@@ -61,7 +64,7 @@ uint64_t compare_curves(const curve* c1, const curve* c2){
 
     This is done by finding the square difference in area of the two curves.
     As time increases with each successive sample, this integral can be simplified to a
-    riemann sum where the change in sample, ∆s, is always 1:
+    riemann sum where the change in sample ∆s is 1:
 
     ∫ (c2 - c1) ** 2 ds ~ sum((c2[i] - c1[i]) ** 2) * ∆s = sum((c2[i] - c1[i]) ** 2)
 
@@ -85,23 +88,24 @@ bool is_same_curve(const curve* c1, const curve* c2){
     curve.
     
     This is evaluated by finding the error between the two curves and dividing it by the
-    length of the longest curve. If the average error per unit time is greater than the
-    threshold, they are considered different.
+    largest square area of the two curves. If the average error per unit time is greater
+    than the threshold, they are considered different.
 
     The 'per unit time' is not strictly accurate as the length is given in terms of 
     number of samples, but as the period between two samples is constant, these two 
     concepts are roughly the same, and per unit time is more intuitive.
     */
-    size_t length = (c1->length > c2->length) ? c1->length : c2->length;
-    int error_per_sample = length ? (compare_curves(c1, c2) / length) : 0;
-    
-    char c1_type[4] = " ve", c2_type[4] = " ve";
+    size_t square_area = (c1->square_area > c2->square_area) ? c1->square_area : c2->square_area;
+    double error_of_fit = square_area ? compare_curves(c1, c2) / square_area: 0.0;
 
+    /*
+    char c1_type[4] = " ve", c2_type[4] = " ve";
     c1_type[0] = c1->data[25] > 0 ? '+' : (c1->data[25] == 0 ? '0' : '-');
     c2_type[0] = c2->data[25] > 0 ? '+' : (c2->data[25] == 0 ? '0' : '-');
-
-    //printf("%s and %s, ERROR / LENGTH: %d\n", c1_type, c2_type, error_per_sample);
-    return (size_t) error_per_sample < CURVE_ERROR_THRESHOLD;
+    printf("%s, %s: ERROR %f\n", c1_type, c2_type, (double) compare_curves(c1, c2) / square_area);
+    */
+   
+    return error_of_fit < CURVE_ERROR_THRESHOLD;
 }
 
 int recurse_through_curves(curve* curves, int i, int j, size_t curves_array_length){
@@ -147,7 +151,6 @@ int recurse_through_curves(curve* curves, int i, int j, size_t curves_array_leng
     }
     return recurse_through_curves(curves, i, j + 1, curves_array_length);
 }
-
 
 int find_waveform(curve* curves, int i, size_t curves_array_length){
     return recurse_through_curves(curves, i, 1, curves_array_length);
