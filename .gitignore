@@ -1,0 +1,15 @@
+# Ignore all
+*
+
+# Except files with extensions and directories
+!*.*
+!*/
+
+# Ignore hidden files and object files
+.*
+*.o
+*.out
+
+# Except gitignore and gitmodules
+!.gitignore
+!.gitmodules
