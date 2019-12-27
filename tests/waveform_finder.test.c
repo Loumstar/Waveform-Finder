@@ -1,18 +1,16 @@
 #include "../waveform_finder.h"
 #include "Write-WAV-File/wave_file.h"
 
-#define MAX_SAVED_CURVES 50
+#define MAX_SAVED_CURVES (2 * WAVEFORM_MAX_CURVES)
 
 int main(void){
     char wave_filename[] = "a_note.wav";
 
     curve saved_curves[MAX_SAVED_CURVES];
 
-    for(size_t i = 0; i < MAX_SAVED_CURVES; i++){
-        saved_curves[i].length = 0;
-    }
+    for(size_t i = 0; i < MAX_SAVED_CURVES; i++) saved_curves[i].length = 0;
 
-    waveform main_waveform;
+    waveform current_waveform;
 
     Wave a_note = read_wave_metadata(wave_filename);
 
@@ -21,6 +19,7 @@ int main(void){
 
     int curve_index = 0;
     size_t curve_data_index = 2;
+    size_t waveforms_found = 0;
     
     for(size_t i = 0; i < a_note.numberof_samples; i++){
         saved_curves[curve_index].data[curve_data_index] = a_note_array[i];
@@ -29,20 +28,11 @@ int main(void){
             saved_curves[curve_index].length = curve_data_index;
             saved_curves[curve_index].square_area = find_square_area(&saved_curves[curve_index]);
             
-            size_t relative_index = find_waveform(saved_curves, curve_index, MAX_SAVED_CURVES);
+            bool new_waveform_found = find_waveform(current_waveform, saved_curves, curve_index, MAX_SAVED_CURVES);
 
-            if(relative_index){
-                printf("WAVEFORM FOUND\n   LENGTH %zu\n", relative_index);
-                main_waveform.length = relative_index;
-
-                size_t waveform_frame_length = 0;
-                
-                for(size_t j = 0; j < relative_index; j++){
-                    main_waveform.curves[j] = saved_curves[(curve_index + relative_index + j) % MAX_SAVED_CURVES];
-                    waveform_frame_length += main_waveform.curves[j].length;
-                }
-
-                if(waveform_frame_length) printf("   FREQUENCY %.2f\n", (double) a_note.header.sample_rate / waveform_frame_length);
+            if(new_waveform_found){
+                waveforms_found++;
+                printf("WAVEFORM COUNT %zu\n", waveforms_found);
             }
 
             curve_index = (curve_index + 1) % MAX_SAVED_CURVES;

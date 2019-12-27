@@ -104,20 +104,20 @@ bool is_same_curve(const curve* c1, const curve* c2){
     c2_type[0] = c2->data[25] > 0 ? '+' : (c2->data[25] == 0 ? '0' : '-');
     printf("%s, %s: ERROR %f\n", c1_type, c2_type, (double) compare_curves(c1, c2) / square_area);
     */
-   
+
     return error_of_fit < CURVE_ERROR_THRESHOLD;
 }
 
-int recurse_through_curves(curve* curves, int i, int j, size_t curves_array_length){
+int recurse_through_curves(const curve* curves, int i, int j, size_t curves_array_length){
     /*
     Method to compare a set of curves to determine if there exists a repeating waveform.
 
     The method is recursive, where i and k point to curves to be compared against, and j
     is the index difference between these curves.
     
-    Note i is constant, and j is increasing. As k = i - j, and k is decreasing.
+    Note i is constant, and j is decreasing.
 
-    If curve[i] and curve[k] are the same and i and k are not the same index, this
+    If curve[i] and curve[j] are the same and i and j are not the same index, this
     implies that there is a repeating pattern.
 
     The method will then compare all the intermediate curves, i.e. curve[i - 1] will be
@@ -126,17 +126,16 @@ int recurse_through_curves(curve* curves, int i, int j, size_t curves_array_leng
     At this point, if none of the is_same_curve() tests have failed, the sequence from
     j to i is considered a complete waveform.
 
-    This will return the number of curves between curve[i] and the curve[k], which equals
-    j. If the return value is zero, this implies all curves have been looped through and 
-    no waveform has been found.
+    This will return j. If j = i, all curves have been looped through and no
+    waveform has been found.
     */
-    size_t k = i - j < 0 ? i - j + curves_array_length : i - j;
+    j += j < 0 ? curves_array_length : 0;
 
-    if(is_same_curve(&curves[i], &curves[k])){
+    if(is_same_curve(&curves[i], &curves[j])){
         bool intermediate_curves_same = true;
-        int m = i, n = k;
+        int m = i, n = j;
 
-        while(m != k){
+        while(m != j){
             m += m <= 0 ? curves_array_length - 1 : -1;
             n += n <= 0 ? curves_array_length - 1 : -1;
             
@@ -145,13 +144,26 @@ int recurse_through_curves(curve* curves, int i, int j, size_t curves_array_leng
                 break;
             }
         }
-        if(intermediate_curves_same || i == k){
-            return j % curves_array_length;
+        if(intermediate_curves_same || i == j){
+            return j;
         }
     }
-    return recurse_through_curves(curves, i, j + 1, curves_array_length);
+    return recurse_through_curves(curves, i, j - 1, curves_array_length);
 }
 
-int find_waveform(curve* curves, int i, size_t curves_array_length){
-    return recurse_through_curves(curves, i, 1, curves_array_length);
+bool find_waveform(waveform w, const curve* curves, int i, size_t curves_array_length){    
+    size_t j = recurse_through_curves(curves, i, i - 1, curves_array_length);
+
+    if(i != j){
+        int relative_index = j - i;
+
+        w.length = relative_index > 0 ? curves_array_length - relative_index : -relative_index;
+
+        printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
+
+        for(size_t k = 0; k < w.length; k++){
+            w.curves[k] = curves[(j + k) % curves_array_length];
+        }
+    }
+    return i != j;
 }

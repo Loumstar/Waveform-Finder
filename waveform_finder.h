@@ -38,6 +38,6 @@
 
     bool is_same_waveform(const waveform* w1, const waveform* w2);
 
-    int find_waveform(curve* curves, int i, size_t curves_array_length);
+    bool find_waveform(waveform w, const curve* curves, int i, size_t curves_array_length);
 
 #endif
