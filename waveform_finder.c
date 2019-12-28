@@ -110,7 +110,7 @@ bool is_same_curve(const curve* c1, const curve* c2){
     threshold, they are considered different.
     */
     size_t square_area = (c1->square_area > c2->square_area) ? c1->square_area : c2->square_area;
-    double error_of_fit = square_area ? compare_curves(c1, c2) / square_area: 0.0;
+    double error_of_fit = square_area ? compare_curves(c1, c2) / square_area : 0.0;
 
     return error_of_fit < CURVE_ERROR_THRESHOLD;
 }
@@ -173,20 +173,22 @@ waveform find_waveform(const curve* curves, int i, size_t curves_array_length){
     waveform w;
     
     int j = recurse_through_curves(curves, i, i - 1, curves_array_length);
-    size_t length = i - j < 0 ? curves_array_length + i - j : i - j;
+    size_t numberof_curves = i - j < 0 ? curves_array_length + i - j : i - j;
 
-    if(i == j || length > WAVEFORM_MAX_CURVES){
-        if(length > WAVEFORM_MAX_CURVES){
-            printf("Waveform length greater than WAVEFORM_MAX_CURVES\n");
-            printf("    %zu > %d\n", length, WAVEFORM_MAX_CURVES);
-        }
-        w.length = 0;
+    if(i == j){
+        printf("No waveform pattern found for curve at %p\n", (void*) &curves[i]);
+        w.numberof_curves = 0;
+    } else if(numberof_curves > WAVEFORM_MAX_CURVES){
+        printf("Waveform length greater than WAVEFORM_MAX_CURVES\n");
+        printf("    %zu > %d\n", numberof_curves, WAVEFORM_MAX_CURVES);
+        w.numberof_curves = 0;
     } else {
-        w.length = length;
-        //printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
-        for(size_t k = 0; k < w.length; k++){
+        w.numberof_curves = numberof_curves;
+        //printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.numberof_curves);
+        for(size_t k = 0; k < w.numberof_curves; k++){
             w.curves[k] = curves[(j + k) % curves_array_length];
         }
     }
+
     return w;
 }

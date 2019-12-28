@@ -3,15 +3,11 @@
 
     #include <stdbool.h>
     #include <stdint.h>
-    #include <stddef.h>
+    #include <stdio.h>
     #include <math.h>
 
-    #include <stdio.h>
-
     #define DELTA_S 10
-
     #define WAVEFORM_MAX_CURVES 15
-    
     #define CURVE_ERROR_THRESHOLD 0.01
 
     typedef struct curve {
@@ -21,7 +17,7 @@
     } curve;
 
     typedef struct waveform {
-        size_t length;
+        size_t numberof_curves;
         curve curves[WAVEFORM_MAX_CURVES];
     } waveform;
 
