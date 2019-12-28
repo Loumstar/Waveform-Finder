@@ -10,9 +10,8 @@
 
     #define DELTA_S 10
 
-    #define CURVE_MAX_SAMPLES 100
     #define WAVEFORM_MAX_CURVES 15
-
+    
     #define CURVE_ERROR_THRESHOLD 0.01
 
     typedef struct curve {
@@ -28,11 +27,11 @@
 
     bool is_point_of_inflection(const int32_t* frame);
 
-    uint64_t find_square_area(const curve* c);
+    void set_new_curve(curve* c, int32_t* data_start);
 
-    uint64_t compare_curves(const curve* c1, const curve* c2);
+    void set_curve_length(curve* c, size_t length);
 
-    bool is_same_curve(const curve* c1, const curve* c2);
+    void analyse_curve(curve* c);
 
     waveform find_waveform(const curve* curves, int i, size_t curves_array_length);
 

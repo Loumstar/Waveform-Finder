@@ -58,6 +58,20 @@ uint64_t find_square_area(const curve* c){
     return square_difference;
 }
 
+void set_new_curve(curve* c, int32_t* data_start){
+    c->length = 0;
+    c->square_area = 0;
+    c->data = data_start;
+}
+
+void set_curve_length(curve* c, size_t length){
+    c->length = length;
+}
+
+void analyse_curve(curve* c){
+    c->square_area = find_square_area(c);
+}
+
 uint64_t compare_curves(const curve* c1, const curve* c2){
     /*
     Method to evaluate how similar two curves are.
@@ -92,12 +106,8 @@ bool is_same_curve(const curve* c1, const curve* c2){
     curve.
     
     This is evaluated by finding the error between the two curves and dividing it by the
-    largest square area of the two curves. If the average error per unit time is greater
-    than the threshold, they are considered different.
-
-    The 'per unit time' is not strictly accurate as the length is given in terms of 
-    number of samples, but as the period between two samples is constant, these two 
-    concepts are roughly the same, and per unit time is more intuitive.
+    largest square area of the two curves. If the "error of fit" is greater than the 
+    threshold, they are considered different.
     */
     size_t square_area = (c1->square_area > c2->square_area) ? c1->square_area : c2->square_area;
     double error_of_fit = square_area ? compare_curves(c1, c2) / square_area: 0.0;
@@ -123,8 +133,8 @@ int recurse_through_curves(const curve* curves, int i, int j, size_t curves_arra
     At this point, if none of the is_same_curve() tests have failed, the sequence from
     j to i is considered a complete waveform.
 
-    This will return j. If j = i, all curves have been looped through and no
-    waveform has been found.
+    The method returns j. If j = i, it means that all curves have been looped through and
+    no waveform has been found.
     */
     j += j < 0 ? curves_array_length : 0;
 
@@ -149,24 +159,34 @@ int recurse_through_curves(const curve* curves, int i, int j, size_t curves_arra
 }
 
 waveform find_waveform(const curve* curves, int i, size_t curves_array_length){    
+    /*
+    Method to return a waveform struct if a waveform is found by comparing curves using
+    the recurse_through_curves() method.
+
+    If index i and j are equal, this implies no curve has been found. If the length of
+    the waveform is greater than WAVEFORM_MAX_CURVES, then the waveform is discarded.
+
+    In both cases, a blank waveform will be returned.
+
+    Else, a fully initialised waveform, with pointers to each curve, will be returned.
+    */
     waveform w;
     
-    size_t j = recurse_through_curves(curves, i, i - 1, curves_array_length);
+    int j = recurse_through_curves(curves, i, i - 1, curves_array_length);
+    size_t length = i - j < 0 ? curves_array_length + i - j : i - j;
 
-    if(i != j){
-        int relative_index = ((int) i) - ((int) j);
-        w.length = (size_t) (relative_index < 0 ? curves_array_length + relative_index : relative_index);
-        //printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
-        if(w.length > WAVEFORM_MAX_CURVES){
-            printf("Waveform found has a length greater than WAVEFORM_MAX_CUVES\n");
-        } else {
-            for(size_t k = 0; k < w.length; k++){
-                w.curves[k] = curves[(j + k) % curves_array_length];
-            }
+    if(i == j || length > WAVEFORM_MAX_CURVES){
+        if(length > WAVEFORM_MAX_CURVES){
+            printf("Waveform length greater than WAVEFORM_MAX_CURVES\n");
+            printf("    %zu > %d\n", length, WAVEFORM_MAX_CURVES);
         }
-    } else {
         w.length = 0;
+    } else {
+        w.length = length;
+        //printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
+        for(size_t k = 0; k < w.length; k++){
+            w.curves[k] = curves[(j + k) % curves_array_length];
+        }
     }
-
     return w;
 }
