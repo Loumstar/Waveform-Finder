@@ -8,7 +8,11 @@ int main(void){
 
     curve saved_curves[MAX_SAVED_CURVES];
 
-    for(size_t i = 0; i < MAX_SAVED_CURVES; i++) saved_curves[i].length = 0;
+    for(size_t i = 0; i < MAX_SAVED_CURVES; i++){
+        saved_curves[i].length = 0;
+        saved_curves[i].square_area = 0;
+        saved_curves[i].data = NULL;
+    }
 
     waveform current_waveform;
 
@@ -17,27 +21,28 @@ int main(void){
     int32_t* a_note_array = malloc(sizeof(int32_t) * a_note.numberof_samples);
     read_wave_data_to_array(&a_note, a_note_array);
 
-    int curve_index = 0;
-    size_t curve_data_index = 2;
+    size_t curve_index = 0;
+    size_t curve_data_index = 0;
     size_t waveforms_found = 0;
     
-    for(size_t i = 0; i < a_note.numberof_samples; i++){
-        saved_curves[curve_index].data[curve_data_index] = a_note_array[i];
-        
+    saved_curves[curve_index].data = &a_note_array[0];
+    
+    for(size_t i = 0; i < a_note.numberof_samples; i++){        
         if(DELTA_S < i && is_point_of_inflection(&a_note_array[i])){
             saved_curves[curve_index].length = curve_data_index;
             saved_curves[curve_index].square_area = find_square_area(&saved_curves[curve_index]);
-            
-            bool new_waveform_found = find_waveform(current_waveform, saved_curves, curve_index, MAX_SAVED_CURVES);
 
-            if(new_waveform_found){
+            current_waveform = find_waveform(saved_curves, curve_index, MAX_SAVED_CURVES);
+
+            if(current_waveform.length){
                 waveforms_found++;
                 printf("WAVEFORM COUNT %zu\n", waveforms_found);
+                printf("WAVEFORM LENGTH %zu\n", current_waveform.length);
             }
 
             curve_index = (curve_index + 1) % MAX_SAVED_CURVES;
 
-            saved_curves[curve_index].data[0] = a_note_array[i];
+            saved_curves[curve_index].data = &a_note_array[i];
             curve_data_index = 1;
 
         } else {

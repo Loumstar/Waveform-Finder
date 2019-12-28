@@ -18,7 +18,7 @@
     typedef struct curve {
         size_t length;
         uint64_t square_area;
-        int32_t data[CURVE_MAX_SAMPLES];
+        int32_t* data;
     } curve;
 
     typedef struct waveform {
@@ -32,12 +32,8 @@
 
     uint64_t compare_curves(const curve* c1, const curve* c2);
 
-    uint64_t compare_waveforms(const waveform* w1, const waveform* w2);
-
     bool is_same_curve(const curve* c1, const curve* c2);
 
-    bool is_same_waveform(const waveform* w1, const waveform* w2);
-
-    bool find_waveform(waveform w, const curve* curves, int i, size_t curves_array_length);
+    waveform find_waveform(const curve* curves, int i, size_t curves_array_length);
 
 #endif

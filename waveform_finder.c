@@ -72,13 +72,17 @@ uint64_t compare_curves(const curve* c1, const curve* c2){
     discrepency between the two curves is always positive, and can be used to indicate
     the error between them.
     */
-    size_t length = (c1->length > c2->length) ? c1->length : c1->length;
     uint64_t square_difference = 0;
 
-    for(size_t i = 0; i < length; i++){
-        square_difference += pow(((c1->data)[i] - (c2->data)[i]), 2);
+    if(c1->data && c2->data){
+        size_t length = (c1->length > c2->length) ? c1->length : c1->length;
+        for(size_t i = 0; i < length; i++){
+            square_difference += pow(((c1->data)[i] - (c2->data)[i]), 2);
+        }
+    } else if(c1->data || c2->data){
+        square_difference = c1->data ? c1->square_area : c2->square_area;
     }
-
+    
     return square_difference;
 }
 
@@ -97,13 +101,6 @@ bool is_same_curve(const curve* c1, const curve* c2){
     */
     size_t square_area = (c1->square_area > c2->square_area) ? c1->square_area : c2->square_area;
     double error_of_fit = square_area ? compare_curves(c1, c2) / square_area: 0.0;
-
-    /*
-    char c1_type[4] = " ve", c2_type[4] = " ve";
-    c1_type[0] = c1->data[25] > 0 ? '+' : (c1->data[25] == 0 ? '0' : '-');
-    c2_type[0] = c2->data[25] > 0 ? '+' : (c2->data[25] == 0 ? '0' : '-');
-    printf("%s, %s: ERROR %f\n", c1_type, c2_type, (double) compare_curves(c1, c2) / square_area);
-    */
 
     return error_of_fit < CURVE_ERROR_THRESHOLD;
 }
@@ -151,19 +148,25 @@ int recurse_through_curves(const curve* curves, int i, int j, size_t curves_arra
     return recurse_through_curves(curves, i, j - 1, curves_array_length);
 }
 
-bool find_waveform(waveform w, const curve* curves, int i, size_t curves_array_length){    
+waveform find_waveform(const curve* curves, int i, size_t curves_array_length){    
+    waveform w;
+    
     size_t j = recurse_through_curves(curves, i, i - 1, curves_array_length);
 
     if(i != j){
-        int relative_index = j - i;
-
-        w.length = relative_index > 0 ? curves_array_length - relative_index : -relative_index;
-
-        printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
-
-        for(size_t k = 0; k < w.length; k++){
-            w.curves[k] = curves[(j + k) % curves_array_length];
+        int relative_index = ((int) i) - ((int) j);
+        w.length = (size_t) (relative_index < 0 ? curves_array_length + relative_index : relative_index);
+        //printf("WAVEFORM FOUND\n   LENGTH %zu\n", w.length);
+        if(w.length > WAVEFORM_MAX_CURVES){
+            printf("Waveform found has a length greater than WAVEFORM_MAX_CUVES\n");
+        } else {
+            for(size_t k = 0; k < w.length; k++){
+                w.curves[k] = curves[(j + k) % curves_array_length];
+            }
         }
+    } else {
+        w.length = 0;
     }
-    return i != j;
+
+    return w;
 }
