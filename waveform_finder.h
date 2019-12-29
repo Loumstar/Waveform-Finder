@@ -4,6 +4,7 @@
     #include <stdbool.h>
     #include <stdint.h>
     #include <stdio.h>
+    #include <float.h>
     #include <math.h>
 
     #define DELTA_S 10

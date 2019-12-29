@@ -108,9 +108,12 @@ bool is_same_curve(const curve* c1, const curve* c2){
     This is evaluated by finding the error between the two curves and dividing it by the
     largest square area of the two curves. If the "error of fit" is greater than the 
     threshold, they are considered different.
+
+    If a curve has no square area, it must be blank. Therefore the error of fit is given
+    the maximum value so that it fails the test.
     */
     size_t square_area = (c1->square_area > c2->square_area) ? c1->square_area : c2->square_area;
-    double error_of_fit = square_area ? compare_curves(c1, c2) / square_area : 0.0;
+    double error_of_fit = square_area ? compare_curves(c1, c2) / square_area : DBL_MAX;
 
     return error_of_fit < CURVE_ERROR_THRESHOLD;
 }
