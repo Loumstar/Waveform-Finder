@@ -18,17 +18,20 @@
     } curve;
 
     typedef struct waveform {
+        size_t length;
         size_t numberof_curves;
         curve curves[WAVEFORM_MAX_CURVES];
     } waveform;
 
     bool is_point_of_inflection(const int32_t* frame);
 
-    void set_new_curve(curve* c, int32_t* data_start);
+    curve blank_curve();
+
+    curve new_curve(int32_t* frame_start);
 
     void set_curve_length(curve* c, size_t length);
 
-    void analyse_curve(curve* c);
+    waveform blank_waveform();
 
     waveform find_waveform(const curve* curves, int i, size_t curves_array_length);
 

@@ -11,7 +11,7 @@ int main(void){
     
     // Ensure all curves are blank
     for(size_t i = 0; i < MAX_SAVED_CURVES; i++){
-        set_new_curve(&curves[i], NULL);
+        curves[i] = blank_curve();
     }
     
     // Read data from wave file to an array
@@ -25,7 +25,7 @@ int main(void){
     size_t curve_data_index = 0;
     
     // Set the starting point for the first curve at the start of the audio file array
-    set_new_curve(&curves[curve_index], &audio_array[0]);
+    curves[curve_index] = new_curve(&audio_array[0]);
     
     // Loop through each sample of the audio file array
     for(size_t i = DELTA_S; i < audio_file.numberof_samples - DELTA_S; i++){
@@ -33,14 +33,12 @@ int main(void){
         if(is_point_of_inflection(&audio_array[i])){
             // Set the length of the current curve to the number of samples looped through since previous curve
             set_curve_length(&curves[curve_index], curve_data_index);
-            // Run internal analysis on curve
-            analyse_curve(&curves[curve_index]);
             // Run pattern recognition method to find a repeating waveform
             current_waveform = find_waveform(curves, curve_index, MAX_SAVED_CURVES);
             // Move counter to the next curve in the array, if it goes above the size of the array, start again at zero
             curve_index = (curve_index + 1) % MAX_SAVED_CURVES;
             // Reset the next curve, setting the starting point of it to where the previous curve stopped in the audio file
-            set_new_curve(&curves[curve_index], &audio_array[i]);
+            curves[curve_index] = new_curve(&audio_array[i]);
             // Reset the curve length counter
             curve_data_index = 1;
         } else {
