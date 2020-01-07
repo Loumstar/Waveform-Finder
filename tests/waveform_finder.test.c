@@ -1,18 +1,14 @@
 #include "../waveform_finder.h"
 #include "Write-WAV-File/wave_file.h"
 
-#define MAX_SAVED_CURVES (2 * WAVEFORM_MAX_CURVES)
-
 int main(void){
     char wave_filename[] = "a_note.wav";
 
     curve curves[MAX_SAVED_CURVES];
-    waveform current_waveform;
+    waveform current_waveform = blank_waveform();
     
     // Ensure all curves are blank
-    for(size_t i = 0; i < MAX_SAVED_CURVES; i++){
-        curves[i] = blank_curve();
-    }
+    for(size_t i = 0; i < MAX_SAVED_CURVES; i++) curves[i] = blank_curve();
     
     // Read data from wave file to an array
     Wave audio_file = read_wave_metadata(wave_filename);
@@ -21,26 +17,40 @@ int main(void){
 
     // Create a counter for updating curves in the array
     size_t curve_index = 0;
-    // Create a counter to determine the number of samples each curve is in length
+    // Create a counter that represents the starting index of a curve in the audio array
     size_t curve_start_index = 0;
-    
-    // Set the starting point for the first curve at the start of the audio file array
-    curves[curve_index] = new_curve(&audio_array[curve_start_index]);
+    // Create boolean for if a new waveform needs to be found
+    bool waveform_up_to_date;
     
     // Loop through each sample of the audio file array
-    for(size_t i = DELTA_S; i < audio_file.numberof_samples - DELTA_S; i++){
+    for(size_t sample_index = DELTA_S; sample_index < audio_file.numberof_samples - DELTA_S; sample_index++){
         // If at a given sample there is a point of inflection
-        if(is_point_of_inflection(&audio_array[i])){
-            // Set the length of the current curve to the number of samples looped through since previous curve
-            set_curve_length(&curves[curve_index], i - curve_start_index);
-            // Run pattern recognition method to find a repeating waveform
-            current_waveform = find_waveform(curves, curve_index, MAX_SAVED_CURVES);
+        if(is_point_of_inflection(&audio_array[sample_index])){
+            
+            /*
+            Create a new curve that begins at point of the previous inflection and has a
+            length equal to the number of samples between the previous and the new
+            points of inflection.
+            */
+
+            size_t curve_length = sample_index - curve_start_index;
+            new_curve(&curves[curve_index], &audio_array[curve_start_index], curve_length);
+            
+            // Check if the new curve fits the pattern of the waveform
+            waveform_up_to_date = curve_fits_waveform(&curves[curve_index], &current_waveform);
+
+            if(!waveform_up_to_date){
+                // If it doesn't fit, start looking for a new waveform, starting with the newest curve
+                find_new_waveform(&current_waveform, curves, curve_index);
+            } else if(is_end_of_waveform(&current_waveform)){
+                // If the waveform has repeated itself, change the waveform to the most recent version
+                update_waveform(&current_waveform, curves, curve_index);
+            }
+
             // Move counter to the next curve in the array, if it goes above the size of the array, start again at zero
             curve_index = (curve_index + 1) % MAX_SAVED_CURVES;
-            // Reset the next curve, setting its starting point to where the previous curve stopped in the audio array
-            curves[curve_index] = new_curve(&audio_array[i]);
-            // Set the starting index of thr curve
-            curve_start_index = i;
+            // Set the starting index of the next curve
+            curve_start_index = sample_index;
         }
     }
     
